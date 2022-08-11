@@ -4,15 +4,22 @@ defmodule IslandsEngine.Coordinate do
   @enforce_keys [:row, :col]
   defstruct row: nil, col: nil
 
-  @type t(row, col) :: %Coordinate{row: row, col: col}
-  @type t :: %Coordinate{row: integer, col: integer}
+  @type t(row, col) :: %__MODULE__{row: row, col: col}
+  @type t :: %__MODULE__{row: integer, col: integer}
 
   @board_range 1..10
 
-  @spec new(integer, integer) ::
-          {:error, :invalid_coordinate} | {:ok, IslandsEngine.Coordinate.t()}
+  @type coordinates :: MapSet.t(Coordinate.t())
+
+  @type row :: integer
+  @type col :: integer
+
+  @type offset :: {row, col}
+
+  @spec new(row, col) ::
+          {:error, :invalid_coordinate} | {:ok, Coordinate.t()}
   def new(row, col) when row in @board_range and col in @board_range,
-    do: {:ok, %Coordinate{row: row, col: col}}
+    do: {:ok, %__MODULE__{row: row, col: col}}
 
   def new(_row, _col),
     do: {:error, :invalid_coordinate}
