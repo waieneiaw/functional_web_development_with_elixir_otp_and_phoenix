@@ -5,6 +5,8 @@ defmodule IslandsEngine.Board do
   # https://hexdocs.pm/elixir/1.14.0-rc.0/typespecs.html#maps
   @type t() :: %{optional(Island.island_type()) => Island.t()}
 
+  @type win_or_not :: :win | :no_win
+
   @spec new :: __MODULE__.t()
   def new(), do: %{}
 
@@ -77,7 +79,7 @@ defmodule IslandsEngine.Board do
     |> Island.forested?()
   end
 
-  @spec win_check(__MODULE__.t()) :: :win | :no_win
+  @spec win_check(__MODULE__.t()) :: win_or_not()
   defp win_check(board) do
     case all_forested?(board) do
       true -> :win
