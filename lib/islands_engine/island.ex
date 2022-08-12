@@ -1,5 +1,4 @@
 defmodule IslandsEngine.Island do
-  alias __MODULE__
   alias IslandsEngine.Coordinate
 
   @enforce_keys [:coordinates, :hit_coordinates]
@@ -14,35 +13,57 @@ defmodule IslandsEngine.Island do
           hit_coordinates: Coordinate.coordinates()
         }
 
-  @typep island_type :: :square | :atoll | :dot | :l_shape | :s_shape
+  @type island_type :: :square | :atoll | :dot | :l_shape | :s_shape
 
-  @spec new :: Island.t()
+  @spec types() :: [island_type()]
+  def types(), do: [:atoll, :dot, :l_shape, :s_shape, :square]
+
+  @spec new :: __MODULE__.t()
   def new(),
     do: %__MODULE__{coordinates: MapSet.new(), hit_coordinates: MapSet.new()}
 
-  @doc """
-  `with`句の正常時のコードについて、本来は↓のコードだが、このままではDialyxirのエラーを解消できなかった。
-
-  ```elixir
-  %MapSet{} = coordinates <- add_coordinates(offsets, upper_left) do
-  ```
-  このコードから`%MapSet{} = coordinates`から`%MapSet{} =`を除外すると
-  Dialyxirのエラーは解消できたが、エラー発生時に`coordinates`にそのままエラー結果が入ってしまう。
-
-  そのため、`:ok`を付与して明示的に正常に動作した場合の`Coordinate`を取得するように修正した。
-
-  いまのところうまく動作しているように見える。
-  """
   @spec new(island_type(), Coordinate.t()) ::
-          {:error, :invalid_coordinate} | {:ok, Island.t()}
+          {:error, :invalid_coordinate} | {:ok, __MODULE__.t()}
   def new(type, %Coordinate{} = upper_left) do
     with [_ | _] = offsets <- offsets(type),
+         # `with`句の正常時のコードについて、本来は↓のコードだが、
+         # このままではDialyxirのエラーを解消できなかった。
+         #
+         # ```elixir
+         # %MapSet{} = coordinates <- add_coordinates(offsets, upper_left) do
+         # ```
+         # このコードから`%MapSet{} = coordinates`から`%MapSet{} =`を除外すると
+         # Dialyxirのエラーは解消できたが、エラー発生時に`coordinates`にそのままエラー結果が入ってしまう。
+         #
+         # そのため、`:ok`を付与して明示的に正常に動作した場合の`Coordinate`を取得するように修正した。
+         #
+         # いまのところうまく動作しているように見える。
          {:ok, coordinates} <- add_coordinates(offsets, upper_left) do
       {:ok, %__MODULE__{coordinates: coordinates, hit_coordinates: MapSet.new()}}
     else
       error -> error
     end
   end
+
+  @spec overlaps?(__MODULE__.t(), __MODULE__.t()) :: boolean()
+  def overlaps?(existing_island, new_island),
+    do: not MapSet.disjoint?(existing_island.coordinates, new_island.coordinates)
+
+  @spec guess(__MODULE__.t(), Coordinate.t()) :: {:hit, __MODULE__.t()} | :miss
+  def guess(island, coordinate) do
+    case MapSet.member?(island.coordinates, coordinate) do
+      true ->
+        hit_coordinates = MapSet.put(island.hit_coordinates, coordinate)
+        {:hit, %{island | hit_coordinates: hit_coordinates}}
+
+      false ->
+        :miss
+    end
+  end
+
+  @spec forested?(__MODULE__.t()) :: boolean()
+  def forested?(island),
+    do: MapSet.equal?(island.coordinates, island.hit_coordinates)
 
   @spec offsets(island_type()) :: [Coordinate.offset()]
   defp offsets(:square), do: [{0, 0}, {0, 1}, {1, 0}, {1, 1}]
@@ -60,10 +81,10 @@ defmodule IslandsEngine.Island do
         add_coordinate(acc, upper_left, offset)
       end)
 
-    # Dialyxirのエラーをどうにも解消できないので、`reduce_while`の結果を`:ok`を付与した。
     case result_reduce_while do
       {:error, _} = error -> error
-      acc -> {:ok, acc}
+      # Dialyxirのエラーをどうにも解消できないので、`reduce_while`の成功した結果に`:ok`を付与した。
+      coordinates -> {:ok, coordinates}
     end
   end
 

@@ -1,6 +1,4 @@
 defmodule IslandsEngine.Coordinate do
-  alias __MODULE__
-
   @enforce_keys [:row, :col]
   defstruct row: nil, col: nil
 
@@ -9,15 +7,15 @@ defmodule IslandsEngine.Coordinate do
 
   @board_range 1..10
 
-  @type coordinates :: MapSet.t(Coordinate.t())
+  @type coordinates :: MapSet.t(__MODULE__.t())
 
-  @type row :: integer
-  @type col :: integer
+  @type row :: integer()
+  @type col :: integer()
 
-  @type offset :: {row, col}
+  @type offset :: {row(), col()}
 
-  @spec new(row, col) ::
-          {:error, :invalid_coordinate} | {:ok, Coordinate.t()}
+  @spec new(row(), col()) ::
+          {:error, :invalid_coordinate} | {:ok, __MODULE__.t()}
   def new(row, col) when row in @board_range and col in @board_range,
     do: {:ok, %__MODULE__{row: row, col: col}}
 
