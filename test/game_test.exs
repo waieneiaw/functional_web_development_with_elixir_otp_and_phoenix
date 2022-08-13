@@ -2,38 +2,29 @@ defmodule IslandsEngineTest.Game do
   use ExUnit.Case
   use GenServer
 
-  alias IslandsEngine.Game
+  alias IslandsEngine.{Board, Game, Guesses, Rules}
 
-  test "handle_info" do
-    {:ok, game} = GenServer.start_link(Game, %{}, [])
-    assert send(game, :first) == :first
-  end
+  test "start GenServer" do
+    {:ok, game} = Game.start_link("Frank")
 
-  test "handle_call" do
-    {:ok, game} = GenServer.start_link(Game, %{test: "test value"}, [])
-    result = GenServer.call(game, :demo_call)
-    assert result == %{test: "test value"}
-  end
+    state_data = :sys.get_state(game)
 
-  test "demo_call" do
-    {:ok, game} = GenServer.start_link(Game, %{test: "test value"}, [])
-    result = Game.demo_call(game)
-    assert result == %{test: "test value"}
-  end
+    assert state_data.player1.name == "Frank"
+    assert state_data.player1.board == Board.new()
+    assert state_data.player1.guesses == Guesses.new()
 
-  test "handle_cast" do
-    {:ok, game} = GenServer.start_link(Game, %{test: "test value"}, [])
-    assert Game.demo_call(game) == %{test: "test value"}
-    # 値を更新する
-    GenServer.cast(game, {:demo_cast, "another value"})
-    assert Game.demo_call(game) == %{test: "another value"}
-  end
+    assert state_data.player2.name == nil
+    assert state_data.player2.board == Board.new()
+    assert state_data.player2.guesses == Guesses.new()
 
-  test "demo_cast" do
-    {:ok, game} = GenServer.start_link(Game, %{test: "test value"}, [])
-    assert Game.demo_call(game) == %{test: "test value"}
-    # 値を更新する
-    Game.demo_cast(game, "another value")
-    assert Game.demo_call(game) == %{test: "another value"}
+    # `%Rules{}`は初期値を持っているので明示的にセットせずとも↓の状態になる。
+    # ```elixir
+    # assert state_data.rules == %Rules{
+    #      state: :initialized,
+    #      player1: :islands_not_set,
+    #      player2: :islands_not_set
+    #    }
+    # ```
+    assert state_data.rules == %Rules{}
   end
 end

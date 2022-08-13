@@ -1,7 +1,6 @@
 defmodule IslandsEngine.Rules do
   alias IslandsEngine.Board
 
-  @enforce_keys [:state]
   defstruct state: :initialized,
             player1: :islands_not_set,
             player2: :islands_not_set
