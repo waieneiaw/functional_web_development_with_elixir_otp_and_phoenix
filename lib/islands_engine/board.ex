@@ -7,6 +7,10 @@ defmodule IslandsEngine.Board do
 
   @type win_or_not :: :win | :no_win
 
+  @doc """
+  動的にkeyを設定するStructは`defstruct`で定義できないらしい。
+  なので、型定義はしているものの実態は`Board`型として機能しないので、この点は注意が必要かもしれない。
+  """
   @spec new :: __MODULE__.t()
   def new(), do: %{}
 
@@ -23,7 +27,8 @@ defmodule IslandsEngine.Board do
   def all_islands_positioned?(board),
     do: Enum.all?(Island.types(), &Map.has_key?(board, &1))
 
-  @spec guess(__MODULE__.t(), Coordinate.t()) :: any
+  @spec guess(__MODULE__.t(), Coordinate.t()) ::
+          {Island.hit_or_miss(), :none | Island.island_type(), win_or_not(), __MODULE__.t()}
   def guess(board, %Coordinate{} = coordinate) do
     board
     |> check_all_islands(coordinate)
@@ -40,9 +45,9 @@ defmodule IslandsEngine.Board do
   @spec check_all_islands(__MODULE__.t(), Coordinate.t()) ::
           :miss | {Island.island_type(), Island.t()}
   defp check_all_islands(board, coordinate) do
-    # 第２引数はデフォルト値。`guess/2`が`:miss`を返した後、
-    # `false`を`Enum.find_value/3`に返すことでデフォルト値が採用され、
-    # この関数の戻り値が`:miss`になる。
+    # `Enum.find_value/3`の第２引数はデフォルト値。
+    # `guess/2`が`:miss`を返した場合は`false`を`Enum.find_value/3`に返す。
+    # `find`されなかったというなのでデフォルト値が採用され、この関数の戻り値が`:miss`になる。
     Enum.find_value(board, :miss, fn {key, island} ->
       case Island.guess(island, coordinate) do
         {:hit, island} -> {key, island}

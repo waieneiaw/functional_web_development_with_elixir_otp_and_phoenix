@@ -2,7 +2,7 @@ defmodule IslandsEngine.Island do
   alias IslandsEngine.Coordinate
 
   @enforce_keys [:coordinates, :hit_coordinates]
-  defstruct coordinates: nil, hit_coordinates: nil
+  defstruct @enforce_keys
 
   @type t(coordinates, hit_coordinates) :: %__MODULE__{
           coordinates: coordinates,
@@ -14,6 +14,8 @@ defmodule IslandsEngine.Island do
         }
 
   @type island_type :: :square | :atoll | :dot | :l_shape | :s_shape
+
+  @type hit_or_miss :: :hit | :miss
 
   @spec types() :: [island_type()]
   def types(), do: [:atoll, :dot, :l_shape, :s_shape, :square]

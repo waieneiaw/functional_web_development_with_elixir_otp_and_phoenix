@@ -1,6 +1,6 @@
 defmodule IslandsEngine.Coordinate do
   @enforce_keys [:row, :col]
-  defstruct row: nil, col: nil
+  defstruct @enforce_keys
 
   @type t(row, col) :: %__MODULE__{row: row, col: col}
   @type t :: %__MODULE__{row: integer, col: integer}
@@ -9,8 +9,8 @@ defmodule IslandsEngine.Coordinate do
 
   @type coordinates :: MapSet.t(__MODULE__.t())
 
-  @type row :: integer()
-  @type col :: integer()
+  @type row :: integer
+  @type col :: integer
 
   @type offset :: {row(), col()}
 

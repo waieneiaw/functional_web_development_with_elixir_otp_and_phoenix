@@ -1,36 +1,34 @@
 defmodule IslandsEngine.Rules do
-  alias IslandsEngine.Board
+  alias IslandsEngine.{Board, Player}
 
   defstruct state: :initialized,
             player1: :islands_not_set,
             player2: :islands_not_set
 
-  @type game_state ::
-          :initialized
-          | :players_set
-          | :player1_turn
-          | :player2_turn
-          | :game_over
+  @typep game_state ::
+           :initialized
+           | :players_set
+           | :player1_turn
+           | :player2_turn
+           | :game_over
 
-  @type player_state :: :islands_set | :islands_not_set
+  @typep islands_set_state :: :islands_set | :islands_not_set
 
   @type t :: %__MODULE__{
           state: game_state(),
-          player1: player_state(),
-          player2: player_state()
+          player1: islands_set_state(),
+          player2: islands_set_state()
         }
-
-  @typep player :: :player1 | :player2
 
   @spec new :: __MODULE__.t()
   def new(), do: %__MODULE__{state: :initialized}
 
-  @type action ::
-          :add_player
-          | {:position_islands, player_state()}
-          | {:set_islands, player_state()}
-          | {:guess_coordinate, player()}
-          | {:win_check, Board.win_or_not()}
+  @typep action ::
+           :add_player
+           | {:position_islands, Player.role()}
+           | {:set_islands, Player.role()}
+           | {:guess_coordinate, Player.role()}
+           | {:win_check, Board.win_or_not()}
 
   @spec check(__MODULE__.t(), action()) :: :error | {:ok, __MODULE__.t()}
   def check(%__MODULE__{state: :initialized} = rules, :add_player) do
