@@ -137,4 +137,11 @@ defmodule IslandsEngineTest.Game do
     # player2がplayer1の`dot`を当てたので勝利する
     assert Game.guess_coordinate(game, :player2, 1, 1) == {:hit, :dot, :win}
   end
+
+  test "Naming GenServer Processes" do
+    via = Game.via_tuple("Lena")
+    GenServer.start_link(Game, "Lena", name: via)
+    result = GenServer.start_link(Game, "Lena", name: via)
+    assert match?({:error, _}, result)
+  end
 end

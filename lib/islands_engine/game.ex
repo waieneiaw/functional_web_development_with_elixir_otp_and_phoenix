@@ -49,9 +49,13 @@ defmodule IslandsEngine.Game do
     {:ok, %__MODULE__{player1: Player.new(name), player2: Player.new(), rules: %Rules{}}}
   end
 
+  @spec via_tuple(Player.name()) :: {:via, Registry, {Registry.Game, Player.name()}}
+  def via_tuple(name) when is_binary(name),
+    do: {:via, Registry, {Registry.Game, name}}
+
   @spec start_link(Player.name()) :: game_process()
   def start_link(name) when is_binary(name),
-    do: GenServer.start_link(__MODULE__, name, [])
+    do: GenServer.start_link(__MODULE__, name, name: via_tuple(name))
 
   @spec add_player(game_process(), Player.name()) :: :ok | :error
   def add_player(game, name) when is_binary(name),
