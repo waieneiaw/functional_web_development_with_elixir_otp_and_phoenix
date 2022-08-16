@@ -1,9 +1,13 @@
 defmodule IslandsEngine.Game do
-  use GenServer
+  use GenServer, start: {__MODULE__, :start_link, []}, restart: :transient
 
   # ステート更新（`:sys.replace_state`）を実行する場合、`Access`ビヘイビアを実装しなければならない。
   # なお、書籍では一切言及されていないので、`defstruct`しなければもしかしたら不要なのかもしれない。
   @behaviour Access
+
+  @timeout 60 * 60 * 24 * 1000
+  @spec get_timeout_ms :: timeout()
+  def get_timeout_ms(), do: @timeout
 
   # Guardはrequireかimportしないと使えない。Guardは実質マクロらしい。
   # importで呼び出す場合は↓の書き方でOK。
@@ -25,9 +29,13 @@ defmodule IslandsEngine.Game do
            rules: Rules.t()
          }
 
+  # いつの間にかこれ自体を渡す場面が発生した（`Puttingthe Pieces Together`）ので定義した。
+  @typep via :: {:via, Registry, {Registry.Game, Player.name()}}
+
   # GenServerから受け取るプロセス。
-  # どういう名前が適切かわからなかったので`GenServer.on_start()`をそのまま再定義する。
-  @typep game_process :: GenServer.on_start()
+  # どういう名前が適切かわからなかったが、プロセスなのでこの名前にする。
+  # `GenServer.on_start()`と`via()`を定義する。
+  @typep game_process :: GenServer.on_start() | via()
 
   # `handle_call/3`の`from`用の型。たぶん必要はなさそう。
   # これ自身を使うことはないので、ただ自分がわかりやすいように書いている。
@@ -44,12 +52,14 @@ defmodule IslandsEngine.Game do
   # GenServer callbacks
   # ----------------------------------------------------------------------------
 
+  @impl GenServer
   @spec init(Player.name()) :: {:ok, __MODULE__.t()}
   def init(name) do
-    {:ok, %__MODULE__{player1: Player.new(name), player2: Player.new(), rules: %Rules{}}}
+    send(self(), {:set_state, name})
+    {:ok, fresh_state(name)}
   end
 
-  @spec via_tuple(Player.name()) :: {:via, Registry, {Registry.Game, Player.name()}}
+  @spec via_tuple(Player.name()) :: via()
   def via_tuple(name) when is_binary(name),
     do: {:via, Registry, {Registry.Game, name}}
 
@@ -61,6 +71,7 @@ defmodule IslandsEngine.Game do
   def add_player(game, name) when is_binary(name),
     do: GenServer.call(game, {:add_player, name})
 
+  @impl GenServer
   @spec handle_call({:add_player, Player.name()}, caller(), __MODULE__.t()) ::
           handle_call_return_type(:ok | :error)
   def handle_call({:add_player, name}, _from, state_data) do
@@ -74,6 +85,7 @@ defmodule IslandsEngine.Game do
     end
   end
 
+  @impl GenServer
   @spec handle_call(
           {
             :position_island,
@@ -110,6 +122,7 @@ defmodule IslandsEngine.Game do
     end
   end
 
+  @impl GenServer
   @spec handle_call({:set_islands, Player.role()}, caller(), __MODULE__.t()) ::
           handle_call_return_type(
             {:ok, Board.t()}
@@ -130,6 +143,7 @@ defmodule IslandsEngine.Game do
     end
   end
 
+  @impl GenServer
   @spec handle_call(
           {:guess_coordinate, Player.name(), Coordinate.row(), Coordinate.col()},
           caller(),
@@ -160,6 +174,23 @@ defmodule IslandsEngine.Game do
     end
   end
 
+  @impl GenServer
+  def handle_info(:timeout, state_data) do
+    {:stop, {:shutdown, :timeout}, state_data}
+  end
+
+  @impl GenServer
+  def handle_info({:set_state, name}, _state_data) do
+    state_data =
+      case :ets.lookup(:game_state, name) do
+        [] -> fresh_state(name)
+        [{_key, state}] -> state
+      end
+
+    :ets.insert(:game_state, {name, state_data})
+    {:noreply, state_data, @timeout}
+  end
+
   # ----------------------------------------------------------------------------
   # Access callbacks
   #
@@ -167,14 +198,17 @@ defmodule IslandsEngine.Game do
   # マップ操作をしたいだけなので、特にひねらず、そのまま`Map.~~~`に渡す。
   # ----------------------------------------------------------------------------
 
+  @impl Access
   def get_and_update(data, key, function) do
     Map.get_and_update(data, key, function)
   end
 
+  @impl Access
   def pop(data, key) do
     Map.pop(data, key)
   end
 
+  @impl Access
   def fetch(term, key) do
     Map.fetch(term, key)
   end
@@ -214,9 +248,11 @@ defmodule IslandsEngine.Game do
   defp update_rules(state_data, rules),
     do: %__MODULE__{state_data | rules: rules}
 
-  @spec reply_success(__MODULE__.t(), term) :: {:reply, term, __MODULE__.t()}
-  defp reply_success(state_data, reply),
-    do: {:reply, reply, state_data}
+  @spec reply_success(__MODULE__.t(), term) :: {:reply, term, __MODULE__.t(), timeout}
+  defp reply_success(state_data, reply) do
+    :ets.insert(:game_state, {state_data.player1.name, state_data})
+    {:reply, reply, state_data, @timeout}
+  end
 
   @spec player_board(__MODULE__.t(), Player.role()) :: Board.t()
   defp player_board(state_data, player),
@@ -236,5 +272,12 @@ defmodule IslandsEngine.Game do
     update_in(state_data[player_key].guesses, fn guesses ->
       Guesses.add(guesses, hit_or_miss, coordinate)
     end)
+  end
+
+  @spec fresh_state(Player.name()) :: __MODULE__.t()
+  defp fresh_state(name) do
+    player1 = Player.new(name)
+    player2 = Player.new()
+    %__MODULE__{player1: player1, player2: player2, rules: %Rules{}}
   end
 end

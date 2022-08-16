@@ -1,8 +1,12 @@
 defmodule IslandsEngineTest.Game do
   use ExUnit.Case
-  use GenServer
 
   alias IslandsEngine.{Board, Coordinate, Game, Guesses, Island, Rules}
+
+  setup do
+    :ets.delete_all_objects(:game_state)
+    :ok
+  end
 
   test "start GenServer" do
     {:ok, game} = Game.start_link("Frank")
@@ -25,7 +29,7 @@ defmodule IslandsEngineTest.Game do
     #      player2: :islands_not_set
     #    }
     # ```
-    assert state_data.rules == %Rules{}
+    assert state_data.rules == Rules.new()
   end
 
   test "add a second player" do
