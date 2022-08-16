@@ -10,7 +10,7 @@ defmodule IslandsEngineTest.GameSupervisor do
     :ok
   end
 
-  test "it starts and stops a process" do
+  test "it starts and stops the process" do
     {:ok, game} = GameSupervisor.start_game("Cassatt")
 
     via = Game.via_tuple("Cassatt")
@@ -33,7 +33,7 @@ defmodule IslandsEngineTest.GameSupervisor do
   end
 
   @tag :skip
-  test "a process stops after #{Game.get_timeout_ms()} ms" do
+  test "it stops the process after #{Game.get_timeout_ms()} ms" do
     {:ok, game} = GameSupervisor.start_game("Cassatt")
 
     assert Process.alive?(game)
@@ -43,7 +43,7 @@ defmodule IslandsEngineTest.GameSupervisor do
     refute Process.alive?(game)
   end
 
-  test "a process restarts" do
+  test "supervisor restarts the process" do
     {:ok, game} = GameSupervisor.start_game("Hopper")
 
     via = Game.via_tuple("Hopper")
@@ -74,7 +74,7 @@ defmodule IslandsEngineTest.GameSupervisor do
     GameSupervisor.stop_game("Hopper")
   end
 
-  test "" do
+  test "states are recovering after the process is restarted" do
     {:ok, game} = GameSupervisor.start_game("Morandi")
 
     [{"Morandi", value}] = :ets.lookup(:game_state, "Morandi")
@@ -96,7 +96,20 @@ defmodule IslandsEngineTest.GameSupervisor do
     assert state_data.player1.name == "Morandi"
     assert state_data.player2.name == "Rothko"
 
-    # GameSupervisor.stop_game("Morandi")
+    GameSupervisor.stop_game("Morandi")
+  end
+
+  test "states are cleared after supervisor runs `stop_game`" do
+    {:ok, game} = GameSupervisor.start_game("Agnes")
+
+    via = Game.via_tuple("Agnes")
+    assert GenServer.whereis(via) == game
+
+    assert GameSupervisor.stop_game("Agnes") == :ok
+    refute Process.alive?(game)
+
+    assert GenServer.whereis(via) == nil
+    assert :ets.lookup(:game_state, "Agnes") == []
   end
 
   # プロセスが再起動するまでループする

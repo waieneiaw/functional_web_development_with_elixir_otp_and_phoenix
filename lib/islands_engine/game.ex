@@ -191,6 +191,20 @@ defmodule IslandsEngine.Game do
     {:noreply, state_data, @timeout}
   end
 
+  @doc """
+  タイムアウトで`:shutdown`が発生したらステートを削除する。
+  """
+  @impl GenServer
+  def terminate({:shutdown, :timeout}, state_data) do
+    :ets.delete(:game_state, state_data.player1.name)
+    :ok
+  end
+
+  @impl GenServer
+  def terminate(_reason, _state) do
+    :ok
+  end
+
   # ----------------------------------------------------------------------------
   # Access callbacks
   #
@@ -278,6 +292,6 @@ defmodule IslandsEngine.Game do
   defp fresh_state(name) do
     player1 = Player.new(name)
     player2 = Player.new()
-    %__MODULE__{player1: player1, player2: player2, rules: %Rules{}}
+    %__MODULE__{player1: player1, player2: player2, rules: Rules.new()}
   end
 end

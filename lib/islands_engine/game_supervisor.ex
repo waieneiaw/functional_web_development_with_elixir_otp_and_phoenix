@@ -25,8 +25,12 @@ defmodule IslandsEngine.GameSupervisor do
     DynamicSupervisor.start_child(__MODULE__, spec)
   end
 
+  @doc """
+  ステートを削除し、対象のゲームプロセスを終了する。
+  """
   @spec stop_game(Player.name()) :: :ok | {:error, :not_found}
   def stop_game(name) do
+    :ets.delete(:game_state, name)
     DynamicSupervisor.terminate_child(__MODULE__, pid_from_name(name))
   end
 
