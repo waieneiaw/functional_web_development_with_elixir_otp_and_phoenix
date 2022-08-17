@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"name": "root",
+			"path": "."
+		},
+		{
+			"name": "engine",
+			"path": "./apps/islands_engine"
+		},
+		{
+			"name": "interface",
+			"path": "./apps/islands_interface"
+		}
+	],
+	"settings": {}
+}
