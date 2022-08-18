@@ -3,6 +3,16 @@
   <p>Peace of mind from prototype to production</p>
 </section>
 
+<div class="jumbotron">
+  <p class="lead">A productive web framework that does not compromise speed and maintainability.</p>
+  <p>
+    <%= form_tag("/test") do
+      [tag(:input, type: "text", name: "name"),
+      tag(:input, type: "submit", value: "New Game")]
+    end %>
+  </p>
+</div>
+
 <section class="row">
   <article class="column">
     <h2>Resources</h2>

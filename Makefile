@@ -11,4 +11,4 @@ test:
 .PHONY: serve
 serve:
 	mix dialyzer
-	cd apps/islands_interface && mix phx.server
+	cd apps/islands_interface && iex -S mix phx.server
